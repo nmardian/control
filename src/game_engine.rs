@@ -11,6 +11,9 @@ impl GameEngine {
     pub const MIN_Y_COORD: u32 = 0;
     pub const MAX_Y_COORD: u32 = 375500;
 
+    pub const HEADING_FULL_CIRCLE: u32 = 360;
+    pub const HEADING_HALF_CIRCLE: u32 = 180;
+
     pub fn new() -> GameEngine {
         let mut movers: HashMap<u32, Fighter> = HashMap::new();
 
