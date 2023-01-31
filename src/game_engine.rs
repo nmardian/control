@@ -15,7 +15,7 @@ impl GameEngine {
     pub const HEADING_HALF_CIRCLE: u32 = 180;
 
     pub fn new() -> GameEngine {
-        let mut fighters: HashMap<String, Fighter> = HashMap::new();
+        let fighters: HashMap<String, Fighter> = HashMap::new();
 
         GameEngine { all_fighters: fighters }
     }
@@ -29,17 +29,59 @@ impl GameEngine {
 
         result
     }
+
+    pub fn get_fighter(&self, id: String) -> Option<&Fighter> {
+        
+        self.all_fighters.get(&id)
+        
+    }
+
+    pub fn tick(&mut self) {
+        for cur_fighter in self.all_fighters.values_mut() {
+            cur_fighter.move_fighter();
+        }
+    }
 }
 
 #[test]
-fn add_fighter_test() {
+fn add_get_fighter_test() {
     let mut sut_game_engine: GameEngine = GameEngine::new();
 
-    let fighter_one: Fighter = Fighter::new("Alpha".to_string());
-    let fighter_one_dupe: Fighter = Fighter::new("Alpha".to_string());
-    let fighter_two: Fighter = Fighter::new("Bravo".to_string());
+    let id_alpha: &str = "Alpha";
+    let id_bravo: &str = "Bravo";
+
+    let fighter_one: Fighter = Fighter::new(id_alpha.to_string());
+    let fighter_one_dupe: Fighter = Fighter::new(id_alpha.to_string());
+    let fighter_two: Fighter = Fighter::new(id_bravo.to_string());
 
     assert_eq!(true, sut_game_engine.add_fighter(fighter_one));
     assert_eq!(false, sut_game_engine.add_fighter(fighter_one_dupe));
     assert_eq!(true, sut_game_engine.add_fighter(fighter_two));
+
+    assert!(sut_game_engine.get_fighter(id_alpha.to_string()).is_some());
+    assert!(sut_game_engine.get_fighter(id_bravo.to_string()).is_some());
+    assert!(sut_game_engine.get_fighter("Charlie".to_string()).is_none());
+}
+
+#[test]
+fn tick_test() {
+    let mut sut_game_engine: GameEngine = GameEngine::new();
+    
+    let id: &str = "Alpha";
+    let initial_x_coord: u32 = 10;
+    let initial_y_coord: u32 = 20;
+    let speed: u32 = 10;
+
+    let mut fighter:Fighter = Fighter::new(id.to_string());
+
+    fighter.set_inertial_data(0, speed, initial_x_coord, initial_y_coord);
+
+    sut_game_engine.add_fighter(fighter);
+
+    sut_game_engine.tick();
+
+    if let Some(returned_fighter) = sut_game_engine.get_fighter(id.to_string()) {
+        assert!(returned_fighter.x_coord != initial_x_coord);
+        assert!(returned_fighter.y_coord != initial_y_coord);
+    }    
 }
