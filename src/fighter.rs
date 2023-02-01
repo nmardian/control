@@ -1,6 +1,7 @@
 use std::cmp;
 
 use crate::game_engine::GameEngine;
+use crate::math_util;
 
 pub struct Fighter {
     pub id: String,
@@ -107,8 +108,7 @@ impl Fighter {
             // flying straight increases speed
             self.cur_speed = cmp::min(Fighter::MAX_SPEED, self.cur_speed + Fighter::ACCL_DECL);
         }
-
-        // TODO: Change x_coord and y_coord of the Fighter
+        
     }
 }
 
