@@ -46,6 +46,7 @@ impl Fighter {
             && y_coord <= GameEngine::MAX_Y_COORD
         {
             self.cur_heading_degrees = heading;
+            self.desired_heading_degrees = heading;
             self.cur_speed = speed;
             self.x_coord = x_coord;
             self.y_coord = y_coord;
@@ -69,21 +70,21 @@ impl Fighter {
 
     pub fn move_fighter(&mut self) {
         if self.desired_heading_degrees != self.cur_heading_degrees {
+            let degrees_to_desired_heading_left: u32 = (GameEngine::HEADING_FULL_CIRCLE
+                + self.cur_heading_degrees
+                - self.desired_heading_degrees)
+                % GameEngine::HEADING_FULL_CIRCLE;
 
-            let degrees_to_desired_heading_left:u32 = (GameEngine::HEADING_FULL_CIRCLE + self.cur_heading_degrees
-            - self.desired_heading_degrees) % GameEngine::HEADING_FULL_CIRCLE;
-
-            let degrees_to_desired_heading_right:u32 = (GameEngine::HEADING_FULL_CIRCLE + self.cur_heading_degrees
-            + self.desired_heading_degrees) % GameEngine::HEADING_FULL_CIRCLE;
+            let degrees_to_desired_heading_right: u32 = (GameEngine::HEADING_FULL_CIRCLE
+                + self.cur_heading_degrees
+                + self.desired_heading_degrees)
+                % GameEngine::HEADING_FULL_CIRCLE;
 
             // turn right
-            if degrees_to_desired_heading_left > GameEngine::HEADING_HALF_CIRCLE
-            {
+            if degrees_to_desired_heading_left > GameEngine::HEADING_HALF_CIRCLE {
                 if degrees_to_desired_heading_right <= Fighter::TURN_RATE {
                     self.cur_heading_degrees = self.desired_heading_degrees;
-                }
-                else
-                {
+                } else {
                     self.cur_heading_degrees = (GameEngine::HEADING_FULL_CIRCLE
                         + self.cur_heading_degrees
                         + Fighter::TURN_RATE)
@@ -94,9 +95,9 @@ impl Fighter {
             else {
                 if degrees_to_desired_heading_left <= Fighter::TURN_RATE {
                     self.cur_heading_degrees = self.desired_heading_degrees;
-                }
-                else {
-                    self.cur_heading_degrees = (GameEngine::HEADING_FULL_CIRCLE + self.cur_heading_degrees
+                } else {
+                    self.cur_heading_degrees = (GameEngine::HEADING_FULL_CIRCLE
+                        + self.cur_heading_degrees
                         - Fighter::TURN_RATE)
                         % GameEngine::HEADING_FULL_CIRCLE;
                 }
@@ -108,7 +109,27 @@ impl Fighter {
             // flying straight increases speed
             self.cur_speed = cmp::min(Fighter::MAX_SPEED, self.cur_speed + Fighter::ACCL_DECL);
         }
-        
+
+        let delta_x: i32 =
+            math_util::get_x_component_of_speed(self.cur_speed, self.cur_heading_degrees);
+        let delta_y: i32 =
+            math_util::get_y_component_of_speed(self.cur_speed, self.cur_heading_degrees);
+
+        if delta_x.is_positive() {
+            let temp_x: u32 = self.x_coord + delta_x as u32;
+            self.x_coord = cmp::min(GameEngine::MAX_X_COORD, temp_x);
+        } else {
+            let temp_x: i32 = self.x_coord as i32 + delta_x;
+            self.x_coord = cmp::max(GameEngine::MIN_X_COORD as i32, temp_x) as u32;
+        }
+
+        if delta_y.is_positive() {
+            let temp_y: u32 = self.y_coord + delta_y as u32;
+            self.y_coord = cmp::min(GameEngine::MAX_Y_COORD, temp_y);
+        } else {
+            let temp_y: i32 = self.y_coord as i32 + delta_y;
+            self.y_coord = cmp::max(GameEngine::MIN_Y_COORD as i32, temp_y) as u32;
+        }
     }
 }
 
@@ -208,7 +229,10 @@ mod tests {
                 sut_fighter.cur_heading_degrees
             );
 
-            assert_eq!(initial_speed - (move_count * Fighter::ACCL_DECL), sut_fighter.cur_speed);
+            assert_eq!(
+                initial_speed - (move_count * Fighter::ACCL_DECL),
+                sut_fighter.cur_speed
+            );
         }
 
         initial_heading = 180;
@@ -224,7 +248,10 @@ mod tests {
                 sut_fighter.cur_heading_degrees
             );
 
-            assert_eq!(initial_speed - (move_count * Fighter::ACCL_DECL), sut_fighter.cur_speed);
+            assert_eq!(
+                initial_speed - (move_count * Fighter::ACCL_DECL),
+                sut_fighter.cur_speed
+            );
         }
     }
 
@@ -249,7 +276,10 @@ mod tests {
                 sut_fighter.cur_heading_degrees
             );
 
-            assert_eq!(initial_speed - (move_count * Fighter::ACCL_DECL), sut_fighter.cur_speed);
+            assert_eq!(
+                initial_speed - (move_count * Fighter::ACCL_DECL),
+                sut_fighter.cur_speed
+            );
         }
 
         initial_heading = 0;
@@ -266,7 +296,10 @@ mod tests {
                 sut_fighter.cur_heading_degrees
             );
 
-            assert_eq!(initial_speed - (move_count * Fighter::ACCL_DECL), sut_fighter.cur_speed);
+            assert_eq!(
+                initial_speed - (move_count * Fighter::ACCL_DECL),
+                sut_fighter.cur_speed
+            );
         }
     }
 
@@ -286,10 +319,7 @@ mod tests {
         for _move_count in 1..3 {
             sut_fighter.move_fighter();
 
-            assert_eq!(
-                desired_heading,
-                sut_fighter.cur_heading_degrees
-            );    
+            assert_eq!(desired_heading, sut_fighter.cur_heading_degrees);
         }
 
         desired_heading = 355;
@@ -299,10 +329,97 @@ mod tests {
         for _move_count in 1..3 {
             sut_fighter.move_fighter();
 
+            assert_eq!(desired_heading, sut_fighter.cur_heading_degrees);
+        }
+    }
+
+    // test move_fighter in straight line to max speed
+
+    #[test]
+    fn move_fighter_max_x() {
+        let mut sut_fighter: Fighter = Fighter::new("Alpha".to_string());
+
+        let heading_east: u32 = 90;
+        let speed: u32 = 10;
+        let initial_x: u32 = GameEngine::MAX_X_COORD - 5;
+        let initial_y = GameEngine::MAX_Y_COORD / 2;
+
+        sut_fighter.set_inertial_data(heading_east, speed, initial_x, initial_y);
+
+        for _move_count in 1..3 {
+            sut_fighter.move_fighter();
+            assert_eq!(GameEngine::MAX_X_COORD, sut_fighter.x_coord);
+        }
+    }
+
+    #[test]
+    fn move_fighter_min_x() {
+        let mut sut_fighter: Fighter = Fighter::new("Alpha".to_string());
+
+        let heading_west: u32 = 270;
+        let speed: u32 = 10;
+        let initial_x: u32 = GameEngine::MIN_X_COORD + 5;
+        let initial_y = GameEngine::MAX_Y_COORD / 2;
+
+        sut_fighter.set_inertial_data(heading_west, speed, initial_x, initial_y);
+
+        for _move_count in 1..3 {
+            sut_fighter.move_fighter();
+            assert_eq!(GameEngine::MIN_X_COORD, sut_fighter.x_coord);
+        }
+    }
+
+    #[test]
+    fn move_fighter_max_y() {
+        let mut sut_fighter: Fighter = Fighter::new("Alpha".to_string());
+
+        let heading_north: u32 = 0;
+        let speed: u32 = 10;
+        let initial_x: u32 = GameEngine::MAX_X_COORD / 2;
+        let initial_y = GameEngine::MAX_Y_COORD - 5;
+
+        sut_fighter.set_inertial_data(heading_north, speed, initial_x, initial_y);
+
+        for _move_count in 1..3 {
+            sut_fighter.move_fighter();
+            assert_eq!(GameEngine::MAX_Y_COORD, sut_fighter.y_coord);
+        }
+    }
+
+    #[test]
+    fn move_fighter_min_y() {
+        let mut sut_fighter: Fighter = Fighter::new("Alpha".to_string());
+
+        let heading_south: u32 = 180;
+        let speed: u32 = 10;
+        let initial_x: u32 = GameEngine::MAX_X_COORD / 2;
+        let initial_y = GameEngine::MIN_Y_COORD + 5;
+
+        sut_fighter.set_inertial_data(heading_south, speed, initial_x, initial_y);
+
+        for _move_count in 1..3 {
+            sut_fighter.move_fighter();
+            assert_eq!(GameEngine::MIN_Y_COORD, sut_fighter.y_coord);
+        }
+    }
+
+    #[test]
+    fn move_fighter_accl() {
+        let mut sut_fighter: Fighter = Fighter::new("Alpha".to_string());
+
+        let heading_east: u32 = 90;
+        let initial_speed: u32 = 100;
+        let initial_x: u32 = GameEngine::MAX_X_COORD / 2;
+        let initial_y: u32 = GameEngine::MAX_Y_COORD / 2;
+
+        sut_fighter.set_inertial_data(heading_east, initial_speed, initial_x, initial_y);
+
+        for move_count in 1..3 {
+            sut_fighter.move_fighter();
             assert_eq!(
-                desired_heading,
-                sut_fighter.cur_heading_degrees
-            );    
+                initial_speed + (move_count * Fighter::ACCL_DECL),
+                sut_fighter.cur_speed
+            );
         }
     }
 }

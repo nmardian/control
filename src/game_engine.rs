@@ -17,11 +17,13 @@ impl GameEngine {
     pub fn new() -> GameEngine {
         let fighters: HashMap<String, Fighter> = HashMap::new();
 
-        GameEngine { all_fighters: fighters }
+        GameEngine {
+            all_fighters: fighters,
+        }
     }
 
     pub fn add_fighter(&mut self, fighter: Fighter) -> bool {
-        let result:bool = !self.all_fighters.contains_key(&fighter.id);
+        let result: bool = !self.all_fighters.contains_key(&fighter.id);
 
         if result {
             self.all_fighters.insert(fighter.id.clone(), fighter);
@@ -31,9 +33,7 @@ impl GameEngine {
     }
 
     pub fn get_fighter(&self, id: String) -> Option<&Fighter> {
-        
         self.all_fighters.get(&id)
-        
     }
 
     pub fn tick(&mut self) {
@@ -66,15 +66,16 @@ fn add_get_fighter_test() {
 #[test]
 fn tick_test() {
     let mut sut_game_engine: GameEngine = GameEngine::new();
-    
+
     let id: &str = "Alpha";
-    let initial_x_coord: u32 = 10;
-    let initial_y_coord: u32 = 20;
+    let heading_north_east: u32 = 45;
+    let initial_x_coord: u32 = GameEngine::MAX_X_COORD / 2;
+    let initial_y_coord: u32 = GameEngine::MAX_Y_COORD / 2;
     let speed: u32 = 10;
 
-    let mut fighter:Fighter = Fighter::new(id.to_string());
+    let mut fighter: Fighter = Fighter::new(id.to_string());
 
-    fighter.set_inertial_data(0, speed, initial_x_coord, initial_y_coord);
+    fighter.set_inertial_data(heading_north_east, speed, initial_x_coord, initial_y_coord);
 
     sut_game_engine.add_fighter(fighter);
 
@@ -83,5 +84,5 @@ fn tick_test() {
     if let Some(returned_fighter) = sut_game_engine.get_fighter(id.to_string()) {
         assert!(returned_fighter.x_coord != initial_x_coord);
         assert!(returned_fighter.y_coord != initial_y_coord);
-    }    
+    }
 }
