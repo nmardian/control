@@ -1,6 +1,7 @@
 use crate::fighter::Fighter;
 use std::collections::HashMap;
 
+#[derive (serde::Serialize)]
 pub struct GameEngine {
     pub all_fighters: HashMap<String, Fighter>,
 }
@@ -40,6 +41,12 @@ impl GameEngine {
         for cur_fighter in self.all_fighters.values_mut() {
             cur_fighter.move_fighter();
         }
+    }
+
+    pub fn get_game_state(&self) -> String {
+        let game_state_json: String = serde_json::to_string_pretty(&self.all_fighters).unwrap();
+
+        game_state_json
     }
 }
 
