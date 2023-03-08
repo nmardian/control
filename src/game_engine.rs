@@ -4,6 +4,7 @@ use std::collections::HashMap;
 #[derive (serde::Serialize)]
 pub struct GameEngine {
     pub all_fighters: HashMap<String, Fighter>,
+    ended: bool,
 }
 
 impl GameEngine {
@@ -20,6 +21,7 @@ impl GameEngine {
 
         GameEngine {
             all_fighters: fighters,
+            ended: false,
         }
     }
 
@@ -47,6 +49,11 @@ impl GameEngine {
         let game_state_json: String = serde_json::to_string_pretty(&self.all_fighters).unwrap();
 
         game_state_json
+    }
+
+    pub fn is_ended(&self) -> bool
+    {
+        self.ended
     }
 }
 
