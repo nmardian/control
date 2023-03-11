@@ -3,6 +3,7 @@ use crate::fighter::Fighter;
 
 use std::thread;
 use std::time::Duration;
+use std::sync::mpsc;
 
 pub mod fighter;
 pub mod game_engine;
@@ -16,21 +17,23 @@ fn main() {
 
     let nats_connection = nats::connect("nats://127.0.0.1:4222").unwrap();
 
+    let (gamestate_tx, gamestate_rx) = mpsc::channel();
+
     let game_thread = thread::spawn(move || {
 
         while !game_engine.is_ended()
         {
             game_engine.tick();
 
-            let game_state:String = game_engine.get_game_state();
-            nats_connection.publish("game-state", game_state).unwrap();
+            gamestate_tx.send(game_engine.get_game_state()).unwrap();
 
             thread::sleep(Duration::from_secs(1));
         }
     });
 
-    while true
-    {
-        thread::sleep(Duration::from_secs(1));
+    for cur_gamestate in gamestate_rx {
+        nats_connection.publish("game-state", cur_gamestate).unwrap();
     }
+
+    game_thread.join().unwrap();
 }
