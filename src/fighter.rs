@@ -5,7 +5,7 @@ use crate::math_util;
 
 use serde::Serialize;
 
-#[derive (serde::Serialize)]
+#[derive(serde::Serialize)]
 pub struct Fighter {
     pub id: String,
     pub cur_heading_degrees: u32,

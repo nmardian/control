@@ -1,7 +1,7 @@
 use crate::fighter::Fighter;
 use std::collections::HashMap;
 
-#[derive (serde::Serialize)]
+#[derive(serde::Serialize)]
 pub struct GameEngine {
     pub all_fighters: HashMap<String, Fighter>,
     ended: bool,
@@ -51,8 +51,7 @@ impl GameEngine {
         game_state_json
     }
 
-    pub fn is_ended(&self) -> bool
-    {
+    pub fn is_ended(&self) -> bool {
         self.ended
     }
 }
